@@ -41,6 +41,7 @@ struct SettingsView: View {
                 voiceSection(store: store)
                 appearanceSection(store: store)
                 focusSection(store: store)
+                movesSection
                 privacySection
                 backupSection
                 dataSection
@@ -327,6 +328,22 @@ struct SettingsView: View {
             }
         } header: {
             Text("Privacy")
+        }
+    }
+
+    private var movesSection: some View {
+        Section {
+            NavigationLink {
+                MyMovesView()
+            } label: {
+                LabeledContent {
+                    Text("\(store.moves.count)")
+                } label: {
+                    Label("My Moves", systemImage: "bookmark")
+                }
+            }
+        } footer: {
+            Text("Tiny first steps you saved from I'm Stuck.")
         }
     }
 
@@ -617,6 +634,51 @@ struct SiriHelpView: View {
                 }
             }
         }
+    }
+}
+
+/// Every saved "I'm Stuck" move, grouped by reason. Swipe to delete.
+struct MyMovesView: View {
+    @Environment(BrainStore.self) private var store
+
+    private var groups: [(reason: StuckReason, moves: [Move])] {
+        StuckReason.allCases.compactMap { reason in
+            let moves = store.moves.filter { $0.reason == reason.rawValue }
+            return moves.isEmpty ? nil : (reason, moves)
+        }
+    }
+
+    var body: some View {
+        List {
+            ForEach(groups, id: \.reason) { group in
+                Section(group.reason.label) {
+                    ForEach(group.moves) { move in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(move.stepText)
+                                .font(.body)
+                            Text(move.createdAt.formatted(date: .abbreviated, time: .omitted))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    .onDelete { offsets in
+                        for index in offsets { store.deleteMove(group.moves[index].id) }
+                    }
+                }
+            }
+        }
+        .overlay {
+            if store.moves.isEmpty {
+                ContentUnavailableView(
+                    "No moves yet",
+                    systemImage: "bookmark",
+                    description: Text("When a tiny step from I'm Stuck works, tap \u{201C}Save this as a move\u{201D} to keep it here.")
+                )
+            }
+        }
+        .navigationTitle("My Moves")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

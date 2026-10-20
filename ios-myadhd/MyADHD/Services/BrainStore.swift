@@ -406,6 +406,52 @@ final class BrainStore {
         commit()
     }
 
+    // MARK: - My Moves (saved stuck micro-actions)
+
+    /// Every saved move, newest first.
+    var moves: [Move] {
+        (data.moves ?? []).sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Up to `limit` saved moves for a reason, newest first.
+    func moves(for reason: StuckReason, limit: Int = 3) -> [Move] {
+        Array(moves.filter { $0.reason == reason.rawValue }.prefix(limit))
+    }
+
+    func hasMove(_ stepText: String, reason: StuckReason) -> Bool {
+        let trimmed = stepText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (data.moves ?? []).contains { $0.reason == reason.rawValue && $0.stepText == trimmed }
+    }
+
+    /// Saves a step for this reason. Identical reason + text pairs are not duplicated.
+    func saveMove(_ stepText: String, reason: StuckReason) {
+        let trimmed = stepText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !hasMove(trimmed, reason: reason) else { return }
+        var all = data.moves ?? []
+        all.append(Move(reason: reason.rawValue, stepText: trimmed))
+        data.moves = all
+        scheduleSave()
+    }
+
+    func deleteMove(_ id: UUID) {
+        data.moves?.removeAll { $0.id == id }
+        scheduleSave()
+    }
+
+    /// Makes `stepText` the task's next step (inserted before any remaining steps,
+    /// unless it already is next), then starts the task.
+    func startWithFirstStep(_ stepText: String, taskID: UUID) {
+        guard let index = data.tasks.firstIndex(where: { $0.id == taskID }) else { return }
+        let trimmed = stepText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if data.tasks[index].nextSubtask?.title != trimmed {
+            let insertAt = data.tasks[index].subtasks.firstIndex { !$0.isDone } ?? data.tasks[index].subtasks.endIndex
+            data.tasks[index].subtasks.insert(Subtask(title: trimmed), at: insertAt)
+            data.tasks[index].updatedAt = Date()
+        }
+        start(taskID: taskID)
+    }
+
     // MARK: - Where you left off (last opened item)
 
     /// How long Today keeps offering the last opened item.
@@ -773,6 +819,7 @@ final class BrainStore {
             history: data.history,
             checkpoint: data.checkpoint,
             lastOpened: data.lastOpened,
+            moves: data.moves,
             settings: data.settings,
             capacity: rawCapacity.map { BackupCapacity(level: $0.level.rawValue, day: $0.day) },
             openedDays: openedDays.sorted()
@@ -819,6 +866,7 @@ final class BrainStore {
         restored.history = backup.history
         restored.checkpoint = backup.checkpoint
         restored.lastOpened = backup.lastOpened
+        restored.moves = backup.moves
         restored.settings = settings
 
         // Wipe, then write the imported records.

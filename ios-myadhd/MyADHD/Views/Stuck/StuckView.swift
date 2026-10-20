@@ -81,7 +81,13 @@ struct StuckView: View {
     private func resolution(_ reason: StuckReason) -> some View {
         let step = TaskBreakdown.tinyFirstStep(for: task?.title ?? "this", reason: reason)
 
+        let savedMoves = store.moves(for: reason)
+
         return VStack(alignment: .leading, spacing: 18) {
+            if !savedMoves.isEmpty {
+                savedMovesCard(savedMoves)
+            }
+
             VStack(alignment: .leading, spacing: 12) {
                 Eyebrow(text: "Start with just this", color: Theme.accent)
                 Text(step)
@@ -95,6 +101,8 @@ struct StuckView: View {
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.accentSoft, in: .rect(cornerRadius: Theme.cardRadius))
+
+            saveMoveButton(step: step, reason: reason)
 
             if reason == .tooBig || reason == .dontKnowWhereToStart, let task, task.subtasks.isEmpty {
                 Button {
@@ -151,6 +159,69 @@ struct StuckView: View {
                 }
             }
         }
+    }
+
+    // MARK: - My Moves
+
+    private func savedMovesCard(_ moves: [Move]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Eyebrow(text: "Your moves for this")
+                .padding(.leading, 4)
+            VStack(spacing: 0) {
+                ForEach(Array(moves.enumerated()), id: \.element.id) { index, move in
+                    HStack(spacing: 12) {
+                        Text(move.stepText)
+                            .font(.body)
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button("Use this") {
+                            useMove(move)
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .tint(Theme.accent)
+                        .accessibilityLabel("Use this: \(move.stepText)")
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+
+                    if index < moves.count - 1 { RowDivider(leading: 16) }
+                }
+            }
+            .card()
+        }
+    }
+
+    @ViewBuilder
+    private func saveMoveButton(step: String, reason: StuckReason) -> some View {
+        let isSaved = store.hasMove(step, reason: reason)
+        Button {
+            store.saveMove(step, reason: reason)
+            router.flash("Saved")
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            Label(isSaved ? "Saved to My Moves" : "Save this as a move",
+                  systemImage: isSaved ? "checkmark" : "bookmark")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(isSaved ? Theme.inkSecondary : Theme.accent)
+        }
+        .buttonStyle(.plain)
+        .disabled(isSaved)
+        .padding(.leading, 4)
+        .animation(.snappy(duration: 0.2), value: isSaved)
+    }
+
+    private func useMove(_ move: Move) {
+        guard let task else {
+            dismiss()
+            return
+        }
+        store.startWithFirstStep(move.stepText, taskID: task.id)
+        dismiss()
+        router.flash("Started: \(move.stepText)")
     }
 
     private func startStep(_ step: String) {

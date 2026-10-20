@@ -17,6 +17,8 @@ nonisolated struct ThinkSortBackup: Codable, Sendable {
     var checkpoint: Checkpoint?
     /// Optional so backups made before this field existed still restore.
     var lastOpened: LastOpened?
+    /// Optional so backups made before this field existed still restore.
+    var moves: [Move]?
     var settings: AppSettings
     var capacity: BackupCapacity?
     var openedDays: [String]

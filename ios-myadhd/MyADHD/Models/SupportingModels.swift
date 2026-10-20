@@ -154,6 +154,8 @@ nonisolated struct AppData: Codable, Sendable {
     var checkpoint: Checkpoint?
     /// Optional so older saved files keep decoding.
     var lastOpened: LastOpened?
+    /// Saved "I'm Stuck" micro-actions. Optional so older saved files keep decoding.
+    var moves: [Move]?
     var settings: AppSettings = AppSettings()
     var schemaVersion: Int = 1
 }
