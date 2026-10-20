@@ -20,6 +20,13 @@ nonisolated struct OpenedDaysStorage: Sendable {
         return days
     }
 
+    /// Replaces the whole set (used when restoring a backup) and returns it.
+    @discardableResult
+    static func replace(with days: Set<String>, defaults: UserDefaults = .standard) -> Set<String> {
+        defaults.set(days.sorted(), forKey: key)
+        return days
+    }
+
     /// Unique days opened in the current calendar week, honouring the device's first weekday.
     static func countThisWeek(_ days: Set<String>, now: Date = Date(), calendar: Calendar = .current) -> Int {
         guard let week = calendar.dateInterval(of: .weekOfYear, for: now) else { return 0 }

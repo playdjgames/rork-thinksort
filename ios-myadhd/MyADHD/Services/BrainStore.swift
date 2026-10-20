@@ -712,6 +712,86 @@ final class BrainStore {
         persistence.exportJSON(data)
     }
 
+    // MARK: - Backup
+
+    /// One JSON object with every record plus device-only capacity and opened days.
+    func exportBackup() -> Data {
+        let rawCapacity = CapacityStorage.loadRaw()
+        let backup = ThinkSortBackup(
+            thinksortBackupVersion: ThinkSortBackup.currentVersion,
+            exportedAt: Date(),
+            tasks: data.tasks,
+            notes: data.notes,
+            shopping: data.shopping,
+            brainDumps: data.brainDumps,
+            focusSessions: data.focusSessions,
+            history: data.history,
+            checkpoint: data.checkpoint,
+            settings: data.settings,
+            capacity: rawCapacity.map { BackupCapacity(level: $0.level.rawValue, day: $0.day) },
+            openedDays: openedDays.sorted()
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return (try? encoder.encode(backup)) ?? Data()
+    }
+
+    /// Replaces everything on this device with the backup. The file is fully decoded and
+    /// validated before anything is touched, so a bad file leaves current data intact.
+    func importBackup(data backupData: Data) throws {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        guard let probe = try? decoder.decode(BackupVersionProbe.self, from: backupData) else {
+            throw BackupError.unreadable
+        }
+        guard let version = probe.thinksortBackupVersion else { throw BackupError.missingVersion }
+        guard version >= 1, version <= ThinkSortBackup.currentVersion else {
+            throw BackupError.unsupportedVersion(version)
+        }
+        let backup: ThinkSortBackup
+        do {
+            backup = try decoder.decode(ThinkSortBackup.self, from: backupData)
+        } catch {
+            throw BackupError.unreadable
+        }
+
+        // The trial clock and the purchase belong to this device's Apple Account,
+        // not to the backup file, so they are kept as-is.
+        var settings = backup.settings
+        settings.trialStartedAt = data.settings.trialStartedAt
+        settings.lifetimeUnlocked = data.settings.lifetimeUnlocked
+        settings.hasCompletedOnboarding = true
+
+        var restored = AppData()
+        restored.tasks = backup.tasks
+        restored.notes = backup.notes
+        restored.shopping = backup.shopping
+        restored.brainDumps = backup.brainDumps
+        restored.focusSessions = backup.focusSessions
+        restored.history = backup.history
+        restored.checkpoint = backup.checkpoint
+        restored.settings = settings
+
+        // Wipe, then write the imported records.
+        NotificationService.shared.cancelAll()
+        LocationService.shared.stopMonitoringAll()
+        availableMinutes = nil
+        data = restored
+        saveNow()
+        refreshNotifications()
+
+        // Device-only extras.
+        let level = backup.capacity.flatMap { Capacity(rawValue: $0.level) }
+        CapacityStorage.restore(level: level, day: level == nil ? nil : backup.capacity?.day)
+        capacityChoice = level
+        capacityDay = level == nil ? CapacityStorage.dayStamp(for: Date()) : (backup.capacity?.day ?? "")
+        var days = Set(backup.openedDays)
+        days.insert(CapacityStorage.dayStamp(for: Date()))
+        openedDays = OpenedDaysStorage.replace(with: days)
+    }
+
     func deleteAllData() {
         let trialStartedAt = data.settings.trialStartedAt
         let lifetimeUnlocked = data.settings.lifetimeUnlocked

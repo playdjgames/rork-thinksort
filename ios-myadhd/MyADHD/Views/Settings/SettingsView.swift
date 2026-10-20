@@ -2,6 +2,7 @@ import SwiftUI
 import UserNotifications
 import EventKit
 import CoreLocation
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(BrainStore.self) private var store
@@ -15,6 +16,11 @@ struct SettingsView: View {
     @State private var showDeleteConfirm = false
     @State private var showSiriHelp = false
     @State private var showPaywall = false
+    @State private var backupFile: BackupFile?
+    @State private var showBackupPicker = false
+    @State private var pendingBackup: Data?
+    @State private var showReplaceConfirm = false
+    @State private var showBackupError = false
 
     private var purchases: StoreService { StoreService.shared }
 
@@ -36,6 +42,7 @@ struct SettingsView: View {
                 appearanceSection(store: store)
                 focusSection(store: store)
                 privacySection
+                backupSection
                 dataSection
                 aboutSection
             }
@@ -323,6 +330,78 @@ struct SettingsView: View {
         }
     }
 
+    private var backupSection: some View {
+        Section {
+            Button {
+                exportBackup()
+            } label: {
+                Label("Export backup", systemImage: "externaldrive")
+            }
+            Button {
+                showBackupPicker = true
+            } label: {
+                Label("Import backup", systemImage: "square.and.arrow.down")
+            }
+        } header: {
+            Text("Backup")
+        } footer: {
+            Text("A single file you keep yourself. It stays on your device unless you choose where to send it.")
+        }
+        .sheet(item: $backupFile) { file in
+            ActivityShareSheet(items: [file.url])
+                .presentationDetents([.medium, .large])
+                .ignoresSafeArea()
+        }
+        .fileImporter(isPresented: $showBackupPicker, allowedContentTypes: [.json]) { result in
+            handlePickedBackup(result)
+        }
+        .alert("Replace everything?", isPresented: $showReplaceConfirm) {
+            Button("Cancel", role: .cancel) { pendingBackup = nil }
+            Button("Replace", role: .destructive) { restorePendingBackup() }
+        } message: {
+            Text("This will replace everything currently in ThinkSort with the backup. This cannot be undone.")
+        }
+        .alert("That file is not a ThinkSort backup", isPresented: $showBackupError) {
+            Button("OK", role: .cancel) {}
+        }
+    }
+
+    private func exportBackup() {
+        let data = store.exportBackup()
+        let name = "ThinkSort-Backup-\(CapacityStorage.dayStamp(for: Date())).json"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+        do {
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            backupFile = BackupFile(url: url)
+        } catch {
+            router.flash("Couldn't create the backup file.")
+        }
+    }
+
+    private func handlePickedBackup(_ result: Result<URL, Error>) {
+        guard case .success(let url) = result else { return }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url) else {
+            showBackupError = true
+            return
+        }
+        pendingBackup = data
+        showReplaceConfirm = true
+    }
+
+    private func restorePendingBackup() {
+        guard let data = pendingBackup else { return }
+        pendingBackup = nil
+        do {
+            try store.importBackup(data: data)
+            dismiss()
+            router.flash("Backup restored")
+        } catch {
+            showBackupError = true
+        }
+    }
+
     private var dataSection: some View {
         Section("Your data") {
             Button {
@@ -539,6 +618,23 @@ struct SiriHelpView: View {
             }
         }
     }
+}
+
+/// A backup file written to the app's temporary folder, ready to hand to the share sheet.
+struct BackupFile: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
+/// The system share sheet. The user decides where (if anywhere) the file goes.
+struct ActivityShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
 #Preview {
