@@ -1,0 +1,15 @@
+{
+  "$schema": "https://rork.com/schema/rork.json",
+  "apps": [
+    {
+      "name": "MyADHD",
+      "path": "ios-myadhd",
+      "framework": "swift"
+    },
+    {
+      "name": "ThinkSort Android",
+      "path": "android-thinksort",
+      "framework": "kotlin"
+    }
+  ]
+}
