@@ -28,6 +28,16 @@ struct BrainDumpView: View {
         .navigationBarTitleDisplayMode(result == nil ? .large : .inline)
         .toolbar(result == nil ? .visible : .hidden, for: .navigationBar)
         .onDisappear { speech.stop() }
+        .onChange(of: router.focusBrainDump, initial: true) { _, shouldFocus in
+            guard shouldFocus else { return }
+            router.focusBrainDump = false
+            guard result == nil else { return }
+            Task {
+                // Let the tab switch settle so the keyboard reliably appears.
+                try? await Task.sleep(for: .milliseconds(400))
+                isTypingFocused = true
+            }
+        }
     }
 
     // MARK: - Capture

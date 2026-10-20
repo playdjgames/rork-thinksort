@@ -4,6 +4,7 @@ import SwiftUI
 struct MyADHDApp: App {
     @State private var store = BrainStore.shared
     @State private var router = AppRouter()
+    @State private var dumpLauncher = DumpBrainLauncher.shared
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -17,6 +18,14 @@ struct MyADHDApp: App {
                 .environment(router)
                 .preferredColorScheme(colorScheme)
                 .tint(Theme.accent)
+                .onOpenURL { url in
+                    if url.scheme == DumpBrainLauncher.url.scheme, url.host == DumpBrainLauncher.url.host {
+                        dumpLauncher.request()
+                    }
+                }
+                .onChange(of: dumpLauncher.isPending, initial: true) { _, isPending in
+                    if isPending { openBrainDumpFromWidget() }
+                }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background || phase == .inactive {
@@ -27,6 +36,28 @@ struct MyADHDApp: App {
                 Task { await CalendarService.shared.reload() }
                 Task { await StoreService.shared.refresh() }
             }
+        }
+    }
+
+    /// Widget / DumpBrainIntent entry point. An expired trial lands on the paywall
+    /// (the root shows it as a hard gate) instead of the dump.
+    private func openBrainDumpFromWidget() {
+        guard dumpLauncher.consume() else { return }
+        guard store.settings.hasCompletedOnboarding else { return }
+        let isUnlocked = StoreService.shared.isUnlocked || store.settings.lifetimeUnlocked == true
+        let access: AccessState = isUnlocked
+            ? .unlocked
+            : StoreService.shared.accessState(trialStartedAt: store.settings.trialStartedAt)
+        switch access {
+        case .trial, .unlocked:
+            router.dismissModals()
+            router.brainDumpPath = NavigationPath()
+            router.selectedTab = .brainDump
+            router.focusBrainDump = true
+        case .expired:
+            router.dismissModals()
+        case .trialNotStarted:
+            break
         }
     }
 

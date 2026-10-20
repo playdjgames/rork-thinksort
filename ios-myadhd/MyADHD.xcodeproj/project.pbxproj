@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		XX243FDAB3BF49BA623F7EXX /* ThinkSortWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = XX90AE61BA0FC47EDBF207XX /* ThinkSortWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		XXD63457E41125E77BACFDXX /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = XX8F6E1A701EA04CDCEA3DXX /* RevenueCat */; };
 /* End PBXBuildFile section */
 
@@ -25,13 +26,45 @@
 			remoteGlobalIDString = 105FC5792E9EAD3100EA8BCF;
 			remoteInfo = MyADHD;
 		};
+		XXC33576E05ECA5983946FXX /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = XXD1C285EA5475AFB5AB32XX;
+			remoteInfo = ThinkSortWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		XX8618DA762832199DA68BXX /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				XX243FDAB3BF49BA623F7EXX /* ThinkSortWidget.appex in Embed Foundation Extensions */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Embed Foundation Extensions";
+			dstPath = "";
+			dstSubfolderSpec = 13;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		105FC57A2E9EAD3100EA8BCF /* MyADHD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyADHD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		105FC5892E9EAD3200EA8BCF /* MyADHDTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyADHDTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		105FC5932E9EAD3200EA8BCF /* MyADHDUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyADHDUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		XX90AE61BA0FC47EDBF207XX /* ThinkSortWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ThinkSortWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		XXBB10C2ADBECDB1217147XX /* Exceptions for "ThinkSortWidget" folder in "ThinkSortWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = XXD1C285EA5475AFB5AB32XX /* ThinkSortWidget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		105FC57C2E9EAD3100EA8BCF /* MyADHD */ = {
@@ -48,6 +81,14 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MyADHDUITests;
 			sourceTree = "<group>";
+		};
+		XX7F02839FE2822EFB6818XX /* ThinkSortWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ThinkSortWidget;
+			sourceTree = "<group>";
+			exceptions = (
+				XXBB10C2ADBECDB1217147XX /* Exceptions for "ThinkSortWidget" folder in "ThinkSortWidget" target */,
+			);
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -74,6 +115,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XX8052F01083B6D64EBF3DXX /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -84,6 +132,7 @@
 				105FC58C2E9EAD3200EA8BCF /* MyADHDTests */,
 				105FC5962E9EAD3200EA8BCF /* MyADHDUITests */,
 				105FC57B2E9EAD3100EA8BCF /* Products */,
+				XX7F02839FE2822EFB6818XX /* ThinkSortWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -93,6 +142,7 @@
 				105FC57A2E9EAD3100EA8BCF /* MyADHD.app */,
 				105FC5892E9EAD3200EA8BCF /* MyADHDTests.xctest */,
 				105FC5932E9EAD3200EA8BCF /* MyADHDUITests.xctest */,
+				XX90AE61BA0FC47EDBF207XX /* ThinkSortWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,10 +157,12 @@
 				105FC5762E9EAD3100EA8BCF /* Sources */,
 				105FC5772E9EAD3100EA8BCF /* Frameworks */,
 				105FC5782E9EAD3100EA8BCF /* Resources */,
+				XX8618DA762832199DA68BXX /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				XXB0EB95592E17E84D8821XX /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				105FC57C2E9EAD3100EA8BCF /* MyADHD */,
@@ -169,6 +221,26 @@
 			productReference = 105FC5932E9EAD3200EA8BCF /* MyADHDUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		XXD1C285EA5475AFB5AB32XX /* ThinkSortWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = XXBEF997F6763E230FD9B9XX /* Build configuration list for PBXNativeTarget "ThinkSortWidget" */;
+			buildPhases = (
+				XXC8657FDE1577BB138173XX /* Sources */,
+				XX8052F01083B6D64EBF3DXX /* Frameworks */,
+				XXE14368612297FCA2398BXX /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ThinkSortWidget;
+			productName = ThinkSortWidget;
+			productReference = XX90AE61BA0FC47EDBF207XX /* ThinkSortWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+			fileSystemSynchronizedGroups = (
+				XX7F02839FE2822EFB6818XX /* ThinkSortWidget */,
+			);
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -209,6 +281,7 @@
 				105FC5792E9EAD3100EA8BCF /* MyADHD */,
 				105FC5882E9EAD3200EA8BCF /* MyADHDTests */,
 				105FC5922E9EAD3200EA8BCF /* MyADHDUITests */,
+				XXD1C285EA5475AFB5AB32XX /* ThinkSortWidget */,
 			);
 			packageReferences = (
 				XX56D7F10BAEE1D3529BF9XX /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
@@ -232,6 +305,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		105FC5912E9EAD3200EA8BCF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XXE14368612297FCA2398BXX /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -262,6 +342,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XXC8657FDE1577BB138173XX /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -274,6 +361,11 @@
 			isa = PBXTargetDependency;
 			target = 105FC5792E9EAD3100EA8BCF /* MyADHD */;
 			targetProxy = 105FC5942E9EAD3200EA8BCF /* PBXContainerItemProxy */;
+		};
+		XXB0EB95592E17E84D8821XX /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = XXD1C285EA5475AFB5AB32XX /* ThinkSortWidget */;
+			targetProxy = XXC33576E05ECA5983946FXX /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -559,6 +651,52 @@
 			};
 			name = Release;
 		};
+		XX3FD38F1E6A6D950591DDXX /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.49yzh2pn5gqv6dilmmz4x.thinksortwidget;
+				SDKROOT = iphoneos;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ThinkSortWidget/Info.plist;
+				SWIFT_VERSION = 5.0;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				MARKETING_VERSION = 1.1.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = ThinkSort;
+			};
+			name = Debug;
+		};
+		XXF7FFBFA5E0C4347E8222XX /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.49yzh2pn5gqv6dilmmz4x.thinksortwidget;
+				SDKROOT = iphoneos;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ThinkSortWidget/Info.plist;
+				SWIFT_VERSION = 5.0;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				MARKETING_VERSION = 1.1.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = ThinkSort;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -594,6 +732,15 @@
 			buildConfigurations = (
 				105FC5A42E9EAD3200EA8BCF /* Debug */,
 				105FC5A52E9EAD3200EA8BCF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		XXBEF997F6763E230FD9B9XX /* Build configuration list for PBXNativeTarget "ThinkSortWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XX3FD38F1E6A6D950591DDXX /* Debug */,
+				XXF7FFBFA5E0C4347E8222XX /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

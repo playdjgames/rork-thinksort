@@ -79,6 +79,9 @@ final class AppRouter {
     /// Transient confirmation banner, e.g. after a Siri capture.
     var toast: String?
 
+    /// Set when the "Dump" widget opens the app; Brain Dump focuses its text field.
+    var focusBrainDump = false
+
     func openTask(_ id: UUID) {
         switch selectedTab {
         case .upcoming: upcomingPath.append(Route.task(id))
