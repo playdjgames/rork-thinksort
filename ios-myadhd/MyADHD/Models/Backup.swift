@@ -15,6 +15,8 @@ nonisolated struct ThinkSortBackup: Codable, Sendable {
     var focusSessions: [FocusSessionRecord]
     var history: [HistoryEntry]
     var checkpoint: Checkpoint?
+    /// Optional so backups made before this field existed still restore.
+    var lastOpened: LastOpened?
     var settings: AppSettings
     var capacity: BackupCapacity?
     var openedDays: [String]

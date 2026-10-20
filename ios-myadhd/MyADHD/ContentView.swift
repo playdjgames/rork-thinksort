@@ -58,6 +58,8 @@ struct ContentView: View {
         switch route {
         case .task(let id):
             TaskDetailView(taskID: id)
+        case .note(let id):
+            NoteDetailView(noteID: id)
         case .notes:
             NotesView()
         case .search:

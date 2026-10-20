@@ -26,6 +26,7 @@ nonisolated enum AppTab: String, Hashable, CaseIterable, Sendable {
 
 nonisolated enum Route: Hashable, Sendable {
     case task(UUID)
+    case note(UUID)
     case notes
     case search
     case history

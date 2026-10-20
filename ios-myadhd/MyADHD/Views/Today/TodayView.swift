@@ -5,6 +5,7 @@ struct TodayView: View {
     @Environment(BrainStore.self) private var store
     @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var now: Date = Date()
     @State private var showMoreMenu = false
@@ -20,8 +21,8 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: 24) {
                 header
 
-                if let checkpoint = store.checkpoint, let task = store.task(id: checkpoint.taskID), task.isOpen {
-                    resumeBanner(task: task)
+                if let item = store.recentLeftOff(now: now), let title = store.leftOffTitle(for: item) {
+                    resumeBanner(item: item, title: title)
                 }
 
                 capacityRow
@@ -62,6 +63,10 @@ struct TodayView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .onReceive(ticker) { now = $0 }
+        .onAppear { now = Date() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { now = Date() }
+        }
         .refreshable {
             now = Date()
             if store.settings.calendarEnabled { await CalendarService.shared.reload() }
@@ -208,18 +213,24 @@ struct TodayView: View {
         .card()
     }
 
-    private func resumeBanner(task: TaskItem) -> some View {
+    private func resumeBanner(item: LastOpened, title: String) -> some View {
         Button {
-            router.show(fullScreen: .leftOff)
+            switch item.kind {
+            case .task: router.push(.task(item.itemID))
+            case .note: router.push(.note(item.itemID))
+            }
         } label: {
             HStack(spacing: 14) {
-                IconWell(symbol: "arrow.uturn.left", size: 40)
+                IconWell(symbol: item.kind == .note ? "note.text" : "arrow.uturn.left", size: 40)
                 VStack(alignment: .leading, spacing: 2) {
-                    Eyebrow(text: "You left off", color: Theme.accent)
-                    Text(task.title)
+                    Eyebrow(text: "Where you left off", color: Theme.accent)
+                    Text(title)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
+                    Text(Self.relativeTime(from: item.openedAt, to: now))
+                        .font(.caption)
+                        .foregroundStyle(Theme.inkSecondary)
                 }
                 Spacer(minLength: 6)
                 Image(systemName: "chevron.right")
@@ -231,6 +242,17 @@ struct TodayView: View {
             .background(Theme.accentSoft, in: .rect(cornerRadius: 18))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(item.kind == .note ? "Opens the note" : "Opens the task")
+    }
+
+    /// "Just now", "10 minutes ago", "2 hours ago", "Yesterday".
+    static func relativeTime(from date: Date, to now: Date) -> String {
+        guard now.timeIntervalSince(date) >= 60 else { return "Just now" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        formatter.dateTimeStyle = .named
+        return formatter.localizedString(for: date, relativeTo: now).capitalizedFirst
     }
 
     // MARK: - Tiles & timeline

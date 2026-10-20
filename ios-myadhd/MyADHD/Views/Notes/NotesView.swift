@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NotesView: View {
     @Environment(BrainStore.self) private var store
+    @Environment(AppRouter.self) private var router
 
     @State private var newText: String = ""
     @State private var newIsIdea: Bool = true
@@ -65,10 +66,19 @@ struct NotesView: View {
         SectionCard(title: title) {
             ForEach(Array(notes.enumerated()), id: \.element.id) { index, note in
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(note.text)
-                        .font(.body)
-                        .foregroundStyle(Theme.ink)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Button {
+                        router.push(.note(note.id))
+                    } label: {
+                        Text(note.text)
+                            .font(.body)
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens the note")
                     HStack(spacing: 14) {
                         Text(note.createdAt.formatted(date: .abbreviated, time: .omitted))
                             .font(.caption)
@@ -108,6 +118,61 @@ struct NotesView: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
+    }
+}
+
+/// A single note or idea, opened from Notes or from Today's "Where you left off".
+struct NoteDetailView: View {
+    let noteID: UUID
+
+    @Environment(BrainStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    private var note: NoteItem? { store.notes.first { $0.id == noteID } }
+
+    var body: some View {
+        Group {
+            if let note {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Eyebrow(text: note.isIdea ? "Idea" : "Note")
+                        Text(note.text)
+                            .font(.title3)
+                            .foregroundStyle(Theme.ink)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Saved \(note.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.inkTertiary)
+
+                        Button {
+                            store.convertNoteToTask(note.id)
+                            dismiss()
+                        } label: {
+                            Label("Make it a task", systemImage: "checklist")
+                        }
+                        .buttonStyle(SoftButtonStyle())
+                        .padding(.top, 8)
+                    }
+                    .padding(20)
+                    .card()
+                    .padding(.horizontal, Theme.gutter)
+                    .padding(.top, 8)
+                }
+                .scrollIndicators(.hidden)
+                .canvas()
+            } else {
+                ContentUnavailableView("Note not found", systemImage: "tray", description: Text("It may have been deleted."))
+                    .canvas()
+            }
+        }
+        .navigationTitle(note?.isIdea == true ? "Idea" : "Note")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
+        .onAppear {
+            if note != nil { store.recordOpened(.note, id: noteID) }
+        }
     }
 }
 

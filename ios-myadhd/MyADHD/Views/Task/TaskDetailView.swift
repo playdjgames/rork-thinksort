@@ -26,6 +26,9 @@ struct TaskDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .onAppear {
+            if task != nil { store.recordOpened(.task, id: taskID) }
+        }
         .toolbar {
             if let task {
                 ToolbarItem(placement: .topBarTrailing) {

@@ -46,6 +46,19 @@ nonisolated struct Checkpoint: Codable, Hashable, Sendable {
     var note: String = ""
 }
 
+/// The last task or note the user opened, so Today can offer "Where you left off".
+/// Kept separate from `Checkpoint` (the paused-work marker) so simply viewing a
+/// note never changes what ThinkSort recommends next.
+nonisolated struct LastOpened: Codable, Hashable, Sendable {
+    nonisolated enum Kind: String, Codable, Hashable, Sendable {
+        case task, note
+    }
+
+    var itemID: UUID
+    var kind: Kind
+    var openedAt: Date
+}
+
 nonisolated struct HistoryEntry: Identifiable, Codable, Hashable, Sendable {
     var id: UUID = UUID()
     var kind: HistoryKind
@@ -139,6 +152,8 @@ nonisolated struct AppData: Codable, Sendable {
     var focusSessions: [FocusSessionRecord] = []
     var history: [HistoryEntry] = []
     var checkpoint: Checkpoint?
+    /// Optional so older saved files keep decoding.
+    var lastOpened: LastOpened?
     var settings: AppSettings = AppSettings()
     var schemaVersion: Int = 1
 }

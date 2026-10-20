@@ -406,6 +406,46 @@ final class BrainStore {
         commit()
     }
 
+    // MARK: - Where you left off (last opened item)
+
+    /// How long Today keeps offering the last opened item.
+    static let leftOffWindow: TimeInterval = 48 * 60 * 60
+
+    /// Stamps the task or note the user just opened. Today's banner reads this
+    /// directly, so it updates the moment anything is opened.
+    func recordOpened(_ kind: LastOpened.Kind, id: UUID, at date: Date = Date()) {
+        data.lastOpened = LastOpened(itemID: id, kind: kind, openedAt: date)
+        scheduleSave()
+    }
+
+    /// The most recent thing to resume, if it is under 48 hours old and still exists.
+    /// Uses whichever is newer: the last opened task/note or the paused-work checkpoint.
+    /// Completed tasks still count.
+    func recentLeftOff(now: Date = Date()) -> LastOpened? {
+        var candidates: [LastOpened] = []
+        if let opened = data.lastOpened { candidates.append(opened) }
+        if let checkpoint = data.checkpoint {
+            candidates.append(LastOpened(itemID: checkpoint.taskID, kind: .task, openedAt: checkpoint.savedAt))
+        }
+        guard let latest = candidates.max(by: { $0.openedAt < $1.openedAt }) else { return nil }
+        let age = now.timeIntervalSince(latest.openedAt)
+        guard age >= -60, age < Self.leftOffWindow else { return nil }
+        guard leftOffTitle(for: latest) != nil else { return nil }
+        return latest
+    }
+
+    /// Display title for a left-off item, or nil if it no longer exists.
+    func leftOffTitle(for item: LastOpened) -> String? {
+        switch item.kind {
+        case .task:
+            return task(id: item.itemID)?.title
+        case .note:
+            guard let note = data.notes.first(where: { $0.id == item.itemID }) else { return nil }
+            let firstLine = note.text.split(whereSeparator: \.isNewline).first.map(String.init) ?? note.text
+            return firstLine.trimmingCharacters(in: .whitespaces)
+        }
+    }
+
     /// Human sentence answering "where did I leave off?".
     func leftOffSummary() -> String {
         guard let checkpoint = data.checkpoint, let task = task(id: checkpoint.taskID) else {
@@ -455,8 +495,13 @@ final class BrainStore {
 
     func convertNoteToTask(_ id: UUID) {
         guard let note = data.notes.first(where: { $0.id == id }) else { return }
-        add(TaskItem(title: note.text, category: .task))
+        let newTask = TaskItem(title: note.text, category: .task)
+        add(newTask)
         data.notes.removeAll { $0.id == id }
+        // Keep "Where you left off" pointing at the same thing in its new form.
+        if let opened = data.lastOpened, opened.itemID == id {
+            data.lastOpened = LastOpened(itemID: newTask.id, kind: .task, openedAt: opened.openedAt)
+        }
         commit()
     }
 
@@ -727,6 +772,7 @@ final class BrainStore {
             focusSessions: data.focusSessions,
             history: data.history,
             checkpoint: data.checkpoint,
+            lastOpened: data.lastOpened,
             settings: data.settings,
             capacity: rawCapacity.map { BackupCapacity(level: $0.level.rawValue, day: $0.day) },
             openedDays: openedDays.sorted()
@@ -772,6 +818,7 @@ final class BrainStore {
         restored.focusSessions = backup.focusSessions
         restored.history = backup.history
         restored.checkpoint = backup.checkpoint
+        restored.lastOpened = backup.lastOpened
         restored.settings = settings
 
         // Wipe, then write the imported records.
