@@ -16,6 +16,8 @@ final class BrainStore {
     /// Today's capacity choice, mirrored from UserDefaults so views update when it changes.
     private var capacityChoice: Capacity? = CapacityStorage.load()
     private var capacityDay: String = CapacityStorage.dayStamp(for: Date())
+    /// Local calendar days the app has been opened on (device only).
+    private(set) var openedDays: Set<String> = OpenedDaysStorage.record()
 
     init(persistence: PersistenceService = PersistenceService(), seedIfEmpty: Bool = true) {
         if let loaded = persistence.load() {
@@ -99,6 +101,22 @@ final class BrainStore {
     /// The capacity the user picked today, or nil once the local calendar day has rolled over.
     func capacity(now: Date = Date()) -> Capacity? {
         capacityDay == CapacityStorage.dayStamp(for: now) ? capacityChoice : nil
+    }
+
+    /// Called whenever the app becomes active.
+    func recordOpen(now: Date = Date()) {
+        let updated = OpenedDaysStorage.record(now)
+        if updated != openedDays { openedDays = updated }
+        // Pick up a capacity choice made today, or drop yesterday's after midnight.
+        let today = CapacityStorage.dayStamp(for: now)
+        if capacityDay != today {
+            capacityChoice = CapacityStorage.load(on: now)
+            capacityDay = today
+        }
+    }
+
+    func openedDaysThisWeek(now: Date = Date()) -> Int {
+        OpenedDaysStorage.countThisWeek(openedDays, now: now)
     }
 
     func setCapacity(_ capacity: Capacity, now: Date = Date()) {

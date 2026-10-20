@@ -24,6 +24,8 @@ struct TodayView: View {
                     resumeBanner(task: task)
                 }
 
+                capacityRow
+
                 if let action = nextAction {
                     nextUpCard(action)
                     QuickActionRow(actions: [.start, .done, .later, .stuck]) { handle($0, task: action.task) }
@@ -77,6 +79,10 @@ struct TodayView: View {
                 Text(now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                     .font(.title3)
                     .foregroundStyle(Theme.inkSecondary)
+                Text(openedLine)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.inkTertiary)
+                    .padding(.top, 2)
             }
             Spacer(minLength: 12)
             Menu {
@@ -96,6 +102,44 @@ struct TodayView: View {
                 IconWell(symbol: "person.fill", size: 48)
             }
             .accessibilityLabel("More options")
+        }
+    }
+
+    private var openedLine: String {
+        let count = max(store.openedDaysThisWeek(now: now), 1)
+        return "Opened \(count) \(count == 1 ? "day" : "days") this week"
+    }
+
+    // MARK: - Capacity
+
+    private var capacityRow: some View {
+        let selected = store.capacity(now: now)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("How much gas do you have right now?")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.ink)
+            HStack(spacing: 8) {
+                ForEach(Capacity.allCases) { level in
+                    let isOn = selected == level
+                    Button {
+                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
+                            store.setCapacity(level, now: now)
+                        }
+                    } label: {
+                        Label(level.label, systemImage: level.symbol)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                            .foregroundStyle(isOn ? Theme.accent : Theme.inkSecondary)
+                            .background(isOn ? Theme.accentSoft : Theme.surface, in: .capsule)
+                            .overlay(Capsule().strokeBorder(isOn ? Theme.accent.opacity(0.5) : Theme.hairline, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .sensoryFeedback(.selection, trigger: isOn)
+                    .accessibilityAddTraits(isOn ? .isSelected : [])
+                }
+            }
         }
     }
 
@@ -127,6 +171,12 @@ struct TodayView: View {
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let note = action.note {
+                        Label(note, systemImage: "arrow.uturn.forward")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.inkTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

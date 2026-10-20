@@ -23,6 +23,7 @@ struct MyADHDApp: App {
                 store.saveNow()
             }
             if phase == .active {
+                store.recordOpen()
                 Task { await CalendarService.shared.reload() }
                 Task { await StoreService.shared.refresh() }
             }
