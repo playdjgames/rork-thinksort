@@ -13,6 +13,9 @@ final class BrainStore {
     private(set) var data: AppData
     /// Time pocket the user declared ("I have 15 minutes"), cleared when consumed.
     var availableMinutes: Int?
+    /// Today's capacity choice, mirrored from UserDefaults so views update when it changes.
+    private var capacityChoice: Capacity? = CapacityStorage.load()
+    private var capacityDay: String = CapacityStorage.dayStamp(for: Date())
 
     init(persistence: PersistenceService = PersistenceService(), seedIfEmpty: Bool = true) {
         if let loaded = persistence.load() {
@@ -93,12 +96,24 @@ final class BrainStore {
 
     // MARK: - Next action
 
+    /// The capacity the user picked today, or nil once the local calendar day has rolled over.
+    func capacity(now: Date = Date()) -> Capacity? {
+        capacityDay == CapacityStorage.dayStamp(for: now) ? capacityChoice : nil
+    }
+
+    func setCapacity(_ capacity: Capacity, now: Date = Date()) {
+        CapacityStorage.save(capacity, on: now)
+        capacityChoice = capacity
+        capacityDay = CapacityStorage.dayStamp(for: now)
+    }
+
     func nextAction(now: Date = Date()) -> NextAction? {
         let engine = NextActionEngine(
             now: now,
             availableMinutes: availableMinutes,
             minutesUntilNextEvent: CalendarService.shared.minutesUntilNextEvent(from: now),
-            nextEventTitle: CalendarService.shared.events.first?.title
+            nextEventTitle: CalendarService.shared.events.first?.title,
+            capacity: capacity(now: now)
         )
         return engine.recommend(from: data.tasks, checkpoint: data.checkpoint)
     }

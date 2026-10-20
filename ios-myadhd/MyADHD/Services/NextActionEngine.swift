@@ -5,6 +5,8 @@ nonisolated struct NextAction: Identifiable, Hashable, Sendable {
     var task: TaskItem
     var reason: String
     var score: Double
+    /// Extra line shown under the reason, e.g. when a low-capacity day had no small task.
+    var note: String? = nil
 }
 
 /// Chooses the single most sensible thing to do right now.
@@ -15,10 +17,36 @@ nonisolated struct NextActionEngine: Sendable {
     var availableMinutes: Int?
     var minutesUntilNextEvent: Int?
     var nextEventTitle: String?
+    /// Today's self-reported capacity. Only `.low` changes the recommendation.
+    var capacity: Capacity?
+
+    static let biggerTaskNote = "This one is bigger — you can push it."
+
+    /// Small enough for a low-gas moment: estimated under 15 minutes, or a quick
+    /// reminder-style item with no estimate (reminders default to about 5 minutes).
+    func isLowFriction(_ task: TaskItem) -> Bool {
+        if let estimate = task.estimatedMinutes { return estimate < 15 }
+        return task.category == .reminder
+    }
 
     func recommend(from tasks: [TaskItem], checkpoint: Checkpoint?) -> NextAction? {
+        let (best, scored) = rankedRecommendation(from: tasks, checkpoint: checkpoint)
+        guard capacity == .low, var best else { return best }
+
+        // Low capacity: prefer the best-scoring small task when one is available.
+        if let small = scored.filter({ isLowFriction($0.task) && $0.task.category != .idea && $0.task.category != .note })
+            .max(by: { $0.score < $1.score }) {
+            return small
+        }
+        if !isLowFriction(best.task) {
+            best.note = Self.biggerTaskNote
+        }
+        return best
+    }
+
+    private func rankedRecommendation(from tasks: [TaskItem], checkpoint: Checkpoint?) -> (NextAction?, [NextAction]) {
         let candidates = tasks.filter { $0.isOpen && $0.status != .waiting }
-        guard !candidates.isEmpty else { return nil }
+        guard !candidates.isEmpty else { return (nil, []) }
 
         let blockedIDs = Set(candidates.flatMap { task -> [UUID] in
             // A task is blocked while any of its dependencies are still open.
@@ -43,13 +71,13 @@ nonisolated struct NextActionEngine: Sendable {
                 candidates.contains { $0.dependencyIDs.contains(task.id) }
             }
             if let first = prerequisites.first {
-                return NextAction(task: first, reason: "Something else is waiting on this one.", score: 1)
+                return (NextAction(task: first, reason: "Something else is waiting on this one.", score: 1), [])
             }
-            guard let fallback = candidates.first else { return nil }
-            return NextAction(task: fallback, reason: reasonText(for: fallback), score: 1)
+            guard let fallback = candidates.first else { return (nil, []) }
+            return (NextAction(task: fallback, reason: reasonText(for: fallback), score: 1), [])
         }
 
-        return scored.max { $0.score < $1.score }
+        return (scored.max { $0.score < $1.score }, scored)
     }
 
     private func evaluate(_ task: TaskItem, allTasks: [TaskItem], checkpoint: Checkpoint?) -> (Double, String) {
